@@ -300,16 +300,17 @@ module "ApplicationInsights" {
     module.LogAnalyticsWorkspace
   ]
 }
-/*
- 
 module "EventGridSystemTopic" {
   source = "../../modules/EventGridSystemTopic"
  
   eventGridSystemTopicVariables = {
     for key, value in var.eventGridSystemTopicVariables : key => merge(value, {
-      source_resource_id = module.ResourceGroup.rgIds[value.source_resource_group_key]
+      source_resource_id = module.ResourceGroup.rg[value.source_resource_group_key].id
       identity_type      = "UserAssigned"
-      identity_ids       = [module.ManagedIdentity.managedIdentityIds[value.identity_key]]
+      identity_ids       = (
+        try(value.identity_key, null) != null
+        ? [module.ManagedIdentity.mIdentity[value.identity_key].id]
+        : [])
     })
   }
  
@@ -324,10 +325,14 @@ module "EventGridSubscription" {
  
   eventGridSubscriptionVariables = {
     for key, value in var.eventGridSubscriptionVariables : key => merge(value, {
-      system_topic                  = module.EventGridSystemTopic.eventGridSystemTopicNames[value.system_topic_key]
-      service_bus_queue_endpoint_id = module.ServiceBusQueue.serviceBusQueueIds[value.service_bus_queue_key]
+      system_topic                  = module.EventGridSystemTopic.eventGridSystemTopic[value.system_topic_key].name
+      service_bus_queue_endpoint_id = module.ServiceBusQueue.serviceBusQueue[value.service_bus_queue_key].id
       delivery_identity_type        = "UserAssigned"
-      delivery_identity_id          = module.ManagedIdentity.managedIdentityIds[value.delivery_identity_key]
+      delivery_identity_id          = (
+        try(value.delivery_identity_key, null) != null
+        ? module.ManagedIdentity.mIdentity[value.delivery_identity_key].id
+        : null
+      )
     })
   } 
   depends_on = [
@@ -338,39 +343,39 @@ module "EventGridSubscription" {
   ]
 }
 
-module "WindowsFunctionApp" {
-  source = "../../modules/WindowsFunctionApp"
+# module "WindowsFunctionApp" {
+#   source = "../../modules/WindowsFunctionApp"
  
-  windowsFunctionAppVariables = {
-    for key, value in var.windowsFunctionAppVariables : key => merge(value, {
-      service_plan_id                      = module.AppServicePlan.appServicePlanIds[value.app_service_plan_key]
-      storage_account_name                 = module.StorageAccount.storageAccountNames[value.storage_account_key]
-      storage_account_access_key           = module.StorageAccount.storageAccountPrimaryAccessKeys[value.storage_account_key]
-      identity_type                        = "UserAssigned"
-      identity_ids                         = [module.ManagedIdentity.managedIdentityIds[value.managed_identity_key]]
-      application_insights_connection_string = module.ApplicationInsights.applicationInsightsConnectionStrings[value.application_insights_resource_key]
-      application_insights_key               = module.ApplicationInsights.applicationInsightsInstrumentationKeys[value.application_insights_resource_key]
+#   windowsFunctionAppVariables = {
+#     for key, value in var.windowsFunctionAppVariables : key => merge(value, {
+#       service_plan_id                      = module.AppServicePlan.appServicePlan[value.app_service_plan_key].id
+#       storage_account_name       = module.StorageAccount.storageAccount[value.storage_account_key].name
+#       storage_account_access_key = module.StorageAccount.storageAccount[value.storage_account_key].primary_access_key
+#       identity_type                        = "UserAssigned"
+#       identity_ids               = [module.ManagedIdentity.mIdentity[value.managed_identity_key].id]
+#       application_insights_connection_string    = try(module.ApplicationInsights.application_insights_connection_strings[value.application_insights_resource_key], null)
+#       application_insights_key                  = try(module.ApplicationInsights.application_insights_instrumentation_keys[value.application_insights_resource_key], null)
+#       app_settings = merge(
+#         value.app_settings,
+#         {
+#           SERVICEBUS_QUEUE_NAME                         = module.ServiceBusQueue.serviceBusQueue[value.service_bus_queue_key].name
+#           ServiceBusConnection__fullyQualifiedNamespace = "${module.ServiceBusNamespace.serviceBusNamespace[value.service_bus_namespace_key].name}.servicebus.usgovcloudapi.net"
+#           ServiceBusConnection__credential              = "managedidentity"
+#           ServiceBusConnection__clientId                = module.ManagedIdentity.mIdentity[value.managed_identity_key].client_id
+#           MANAGED_IDENTITY_CLIENT_ID                    = module.ManagedIdentity.mIdentity[value.managed_identity_key].client_id
+          
+#         }
+#       )
+#     })
+#   }
  
-      app_settings = merge(
-        value.app_settings,
-        {
-          SERVICEBUS_QUEUE_NAME                         = module.ServiceBusQueue.serviceBusQueueNames[value.service_bus_queue_key]
-          //ServiceBusConnection__fullyQualifiedNamespace = "${module.ServiceBusNamespace.serviceBusNamespaceNames[value.service_bus_namespace_key]}.${var.serviceBusEndpointSuffix}"
-          ServiceBusConnection__credential              = "managedidentity"
-          ServiceBusConnection__clientId                = module.ManagedIdentity.managedIdentityClientIds[value.managed_identity_key]
-          MANAGED_IDENTITY_CLIENT_ID                    = module.ManagedIdentity.managedIdentityClientIds[value.managed_identity_key]
-        }
-      )
-    })
-  }
- 
-  depends_on = [
-    module.AppServicePlan,
-    module.StorageAccount,
-    module.ManagedIdentity,
-    module.ServiceBusNamespace,
-    module.ServiceBusQueue,
-    module.ApplicationInsights,
-  ]
-}*/
+#   depends_on = [
+#     module.AppServicePlan,
+#     module.StorageAccount,
+#     module.ManagedIdentity,
+#     module.ServiceBusNamespace,
+#     module.ServiceBusQueue,
+#     module.ApplicationInsights,
+#   ]
+# }
  
