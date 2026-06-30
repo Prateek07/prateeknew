@@ -588,7 +588,6 @@ variable "applicationInsightsVariables" {
   default = {}
 }
 
-/*
 variable "eventGridSystemTopicVariables" {
   description = "Map of Event Grid system topics. source_resource_group_key points to the RG that contains the AVD VMs. source_resource_id can be supplied directly if needed."
   type = map(object({
@@ -717,7 +716,7 @@ variable "eventGridSubscriptionVariables" {
   }))
   default = {}
 }
-
+/*
 variable "windowsFunctionAppVariables" {
   description = "Map of Windows Function Apps that process Service Bus messages and delete Entra devices. Optional root and site_config settings are exposed."
   type = map(object({
