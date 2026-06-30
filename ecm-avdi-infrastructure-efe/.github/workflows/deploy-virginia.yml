@@ -1,0 +1,95 @@
+name: Terraform CD (Virginia)
+ 
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "infra/envs/env-virginia/**"
+      - ".github/workflows/deploy-virginia.yml"
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+ 
+concurrency:
+  group: tf-cd-virginia-${{ github.ref }}
+  cancel-in-progress: false
+ 
+env:
+  TF_VERSION: "1.6.6"
+  TF_IN_AUTOMATION: "true"
+  ARM_USE_OIDC: "true"
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+ 
+jobs:
+  deploy:
+    runs-on: efe-govva-p01
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+ 
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          environment: AzureUSGovernment
+          audience: api://AzureADTokenExchangeUSGov
+
+      - name: Prepare GitHub OIDC token
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const audience = 'api://AzureADTokenExchangeUSGov';
+            const token = await core.getIDToken(audience);
+            core.setSecret(token);
+            const tokenPath = path.join(process.env.RUNNER_TEMP, 'azure-oidc-token.jwt');
+            fs.writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 });
+            core.exportVariable('ARM_OIDC_TOKEN', token);
+            core.exportVariable('ARM_OIDC_TOKEN_FILE_PATH', tokenPath);
+            const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
+            core.info(`OIDC claims: iss=${payload.iss} aud=${payload.aud} sub=${payload.sub}`);
+            
+      - name: Terraform Init
+        working-directory: infra/envs/env-virginia
+        shell: powershell
+        run: |
+          terraform init -input=false -reconfigure `
+            -backend-config="resource_group_name=${{ secrets.STORAGE_RESOURCE_GROUP }}" `
+            -backend-config="storage_account_name=${{ secrets.STORAGE_ACCOUNT_NAME }}" `
+            -backend-config="container_name=${{ secrets.CONTAINER_NAME }}" `
+            -backend-config="key=${{ secrets.BACKEND_KEY }}" `
+            -backend-config="environment=usgovernment"
+  
+      - name: Terraform Plan
+        working-directory: infra/envs/env-virginia
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          terraform plan -input=false -no-color -out=tfplan -var-file="terraform.tfvars" -detailed-exitcode
+          $planExit = $LASTEXITCODE
+          if ($planExit -eq 1) {
+            throw "terraform plan failed"
+          }
+          terraform show -no-color tfplan | Out-File -FilePath plan.txt -Encoding utf8
+
+      - name: Terraform Apply
+        shell: powershell
+        if: >
+          (github.event_name == 'push')
+        working-directory: infra/envs/env-virginia
+        run: terraform apply -input=false -auto-approve tfplan
