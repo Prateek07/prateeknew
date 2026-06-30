@@ -135,7 +135,7 @@ privateEndpointVariables = {
     target_key          = "az-avd-kv-prod-1"
   }
   az-avd-pe-blob-prod-1 = {
-    name                = "pe-avd-blob-automation-usgovaz-p01"
+    name                = "pe-avd-stblob-automation-usgovaz-p01"
     resource_group_name = "rg-avd-automation-usgovaz-p01"
     location            = "usgovarizona"
     subnet_key          = "az-avd-snet-prod-3"
@@ -144,7 +144,7 @@ privateEndpointVariables = {
     target_key          = "az-avd-sa-prod-1"
   }
   az-avd-pe-file-prod-1 = {
-    name                = "pe-avd-file-automation-usgovaz-p01"
+    name                = "pe-avd-stfile-automation-usgovaz-p01"
     resource_group_name = "rg-avd-automation-usgovaz-p01"
     location            = "usgovarizona"
     subnet_key          = "az-avd-snet-prod-3"
@@ -152,15 +152,16 @@ privateEndpointVariables = {
     target_type         = "storageaccount"
     target_key          = "az-avd-sa-prod-1"
   }
-  # az-avd-pe-sbns-prod-1 = {
-  #   name                = "pe-avd-sbns-automation-usgovaz-p01"
+  #  az-avd-pe-func-prod-1 = {
+  #   name                = "pe-avd-func-automation-usgovaz-p01"
   #   resource_group_name = "rg-avd-automation-usgovaz-p01"
   #   location            = "usgovarizona"
   #   subnet_key          = "az-avd-snet-prod-3"
-  #   subresource_names   = ["namespace"]
-  #   target_type         = "servicebusnamespace"
-  #   target_key          = "az-avd-sbm-prod-1"
-  # }
+  #   subresource_names   = ["sites"]
+  #   target_type         = "functionapp"
+  #   target_key          = "az-avd-fa-prod-1"
+  #}
+
 }
 # Application Group variables for AVD environment
 applicationGroupVariables = {
@@ -650,7 +651,6 @@ serviceBusNamespaceVariables = {
     tags                          = {}
   }
 }
-
 serviceBusQueueVariables = {
   az-avd-sbq-prod-1 = {
     name                                 = "sbq-avd-automation-vmld-usgovaz-p01"
@@ -697,7 +697,6 @@ storageAccountVariables = {
     tags                            = {}
   }
 }
-/*
 
 eventGridSystemTopicVariables = {
   az-avd-egst-prod-1 = {
@@ -727,30 +726,29 @@ eventGridSubscriptionVariables = {
 }
 
 
-windowsFunctionAppVariables = {
-  az-avd-func-prod-1 = {
-    name                          = "func-avd-automation-usgovaz-p01"
-    resource_group_name           = "rg-avd-automation-usgovaz-p01"
-    location                      = "usgovarizona"
-    app_service_plan_key          = "az-avd-asp-prod-1"
-    storage_account_key           = "az-avd-sa-prod-1"
-    managed_identity_key          = "az-avd-mi-prod-1"
-    service_bus_namespace_key     = "az-avd-sbm-prod-1"
-    service_bus_queue_key         = "az-avd-sbq-prod-1"
-    application_insights_resource_key = "az-avd-appi-prod-1"
-    set_runtime_app_settings      = true
-    powershell_core_version       = "7.4"
-    functions_extension_version   = "~4"
-    https_only                    = true
-    public_network_access_enabled = true
-    app_settings = {
-      GRAPH_ROOT          = "https://graph.microsoft.us/v1.0"
-      GRAPH_RESOURCE      = "https://graph.microsoft.us"
-      ALLOWED_VM_PREFIXES = ""
-      DRY_RUN             = "true"
-      WEBSITE_RUN_FROM_PACKAGE = "1"
-    }
-    tags = {}
-  }
-}
-*/
+# windowsFunctionAppVariables = {
+#   az-avd-fa-prod-1 = {
+#     name                          = "func-avd-automation-usgovaz-p01"
+#     resource_group_name           = "rg-avd-automation-usgovaz-p01"
+#     location                      = "usgovarizona"
+#     app_service_plan_key          = "az-avd-asp-prod-1"
+#     storage_account_key           = "az-avd-sa-prod-1"
+#     managed_identity_key          = "az-avd-mi-prod-1"
+#     service_bus_namespace_key     = "az-avd-sbm-prod-1"
+#     service_bus_queue_key         = "az-avd-sbq-prod-1"
+#     application_insights_resource_key = "az-avd-appi-prod-1"
+#     set_runtime_app_settings      = true
+#     powershell_core_version       = "7.6"
+#     functions_extension_version   = "~4"
+#     https_only                    = true
+#     public_network_access_enabled = false
+#     app_settings = {
+#       GRAPH_ROOT          = "https://graph.microsoft.us/v1.0"
+#       GRAPH_RESOURCE      = "https://graph.microsoft.us"
+#       ALLOWED_VM_PREFIXES = ""
+#       DRY_RUN             = "true"
+#       WEBSITE_RUN_FROM_PACKAGE = "1"
+#     }
+#     tags = {}
+#   }
+# }
